@@ -1,0 +1,599 @@
+\documentstyle[estylf_es,twoside,epsfig]{article}
+
+\begin{document}
+
+\title{\bf EVFUZZYSYSTEM: EVOLUCI\'{O}N DE SISTEMAS DIFUSOS PARA PROBLEMAS DE REGRESI\'{O}N MULTI-DIMENSIONALES}
+%\author{{\bf Autor}\\
+%Direcci\'on\\ e-mail \And  {\bf Autor}\\ Direcci\'on\\ e-mail \And {\bf
+%Autor}\\ Direcci\'on\\ e-mail}
+
+\author{%\small
+\begin{tabular}[t]{cccc}
+    M. Mart\'{i}nez-Ballesteros${}^1$ & V\'{i}ctor M. Rivas${}^2$ & M.J. del Jesus${}^2$
+\end{tabular}
+\\
+\\
+    ${}^1$        \small{Departamento de Lenguajes y Sistemas Inform\'{a}ticos, Universidad de Sevilla, mariamartinez@us.es} \\
+    ${}^2$        \small{Departamento de Inform\'{a}tica, Universidad de Sevilla,\{vrivas, mjjesus\}@ujaen.es} \\
+}
+
+\maketitle
+
+\begin{abstract}
+
+Este paper introduce la versi\'{o}n multidimensional de EvFuzzySystems, y un m\'{e}todo evolutivo que permite 
+el dise\~no simult\'{a}neo de funciones miembro y conjunto de reglas apropiados. La versi\'{o}n publicada previamente, 
+mostraba buen comportamiento pero s\'{o}lo podr\'{i}a ser aplicada en problemas con dos entradas y una salida. 
+Extenderlo para ser aplicado a problemas con entradas multidimensionales no ha sido una tarea trivial, desde el 
+punto de vista computacional. Este trabajo muestra los resultados de un nuevo m\'{e}todo para problemas de regresi\'{o}n.
+
+{\bf Palabras Clave:} Sistemas difusos, Algoritmos gen\'{e}ticos, Algoritmos evolutivos, M\'{e}todos h\'{i}bridos, Funci\'{o}n de aproximaci\'{o}n.\vspace{9mm}
+\end{abstract}
+
+\section{INTRODUCCI\'{O}N}
+
+En 2003, Rivas et al. \cite{evfuzzy} present\'{o} un algoritmo gen\'{e}tico nuevo dise\~nado para evolucionar sistemas 
+difusos  de dos dimensiones. El paper describi\'{o} un algoritmo evolutivo capaz de dise\~nar simult\'{a}neamente las 
+funciones miembro as\'{i} como el conjunto de reglas necesarias para construir sistemas de l\'{o}gica difusa (SLD).  
+Sin embargo, el algoritmo, fue centrado en SLD de dos dimensiones, por ejemplo, sistemas para problemas con 2 
+entradas y 1 salida. Pero en el paper, se deja abierta la extensi\'{o}n futura del algoritmo, es decir, que podr\'{i}a ser 
+aplicado a problemas multi-dimensionales. Desde un punto de vista computacional, esta nueva caracter\'{i}stica del 
+algoritmo no fue trivial. Represent\'{o} cambios profundos tanto en la representaci\'{o}n usada para los individuos tanto 
+como en los mecanismos para manejar el modelo, principalmente, los operadores gen\'{e}ticos dise\~nados 
+espec\'{i}ficamente para el algoritmo.
+
+Este paper introduce el nuevo algoritmo EvFuzzySystem, el cual puede ser usado para dise\~nar SLD en problemas 
+de regresi\'{o}n de un n\'{u}mero indeterminado de entradas. Para esto, han sido usadas estructuras de datos adecuadas 
+para representar los individuos y se han desarrollado nuevos operadores gen\'{e}ticos para evolucionar dichas estructuras. 
+
+\section{EL ALGORITMO EVOLUTIVO}
+
+Las siguientes subsecciones detallan las arquitecturas tanto del SLD como del AE que lo optimiza, as\'{i} como la 
+funci\'{o}n fitness y los operadores gen\'{e}ticos usados.
+
+\subsection{CODIFICACI\'{O}N DE LOS INDIVIDUOS: EL SISTEMA DE L\'{O}GICA DIFUSA }
+
+El esquema de representaci\'{o}n usado para codificar cada una de las soluciones, sigue el enfoque Pittsburg, 
+en el cual se tiene que  ``Cromosoma = Base de Reglas?, puesto que cada individuo va a representar un conjunto de 
+reglas, es decir, una soluci\'{o}n al problema. 
+
+En el algoritmo implementado, para representar conjuntos difusos de las variables del antecedente de la regla, se han 
+usado conjuntos difusos triangulares, es decir, la funciones de pertenencia de los t\'{e}rminos lingü\'{i}sticos ser\'{a} una 
+funci\'{o}n triangular como muestra la figura \ref{conjdif}.
+ 
+ \begin{figure}[h]
+\begin{center}
+\epsfig{file=eps/conjdif.eps,width=8cm}
+\end{center}
+\caption{Conjuntos difusos de una variable del algoritmo implementado.}
+\label{conjdif}
+\end{figure}
+
+Un cromosoma, es decir, la soluci\'{o}n de un individuo, va a representar un SLD, un Sistema de L\'{o}gica Difusa, 
+que ser\'{a} implementado como una estructura que almacena distintos elementos: los centros de las particiones 
+triangulares de las funciones de pertenencia de las variables de entrada, y los valores de la variable de salida, es decir, 
+dicha estructura contiene tanto los precedentes como los consecuentes de las reglas del SLD.
+
+De modo m\'{a}s amplio, dicha estructura est\'{a} compuesta por otras dos estructuras, las cuales  representan el conjunto 
+de variables de entrada de n variables con un n\'{u}mero m de t\'{e}rminos, que puede variar en cada variable y el conjunto 
+de consecuentes cuyo tama\~no ser\'{a} igual al producto de los t\'{e}rminos de cada  variable respectivamente. Cada gen, 
+es decir, cada uno de los elementos que forman tanto el conjunto de variables de entrada como el conjunto de consecuentes, 
+ser\'{a}n codificados mediante valores reales, los cuales tendr\'{a}n por alelos valores reales comprendidos entre un m\'{a}ximo  
+y un m\'{i}nimo establecido. Del mismo modo, la funci\'{o}n de evaluaci\'{o}n asociar\'{a} a la estructura en cuesti\'{o}n, un valor 
+real de evaluaci\'{o}n que identifica el valor de aptitud de la soluci\'{o}n obtenida, que cuanto mayor sea, mejor ser\'{a} la soluci\'{o}n. 
+
+El conjunto de variables de entrada es implementado mediante un vector de variables. Cada variable a su vez est\'{a} formado 
+por un vector de reales donde son almacenados los centros de las particiones triangulares de las funciones de pertenencia 
+constituyendo el valor de los precedentes, adem\'{a}s de contener el rango que comprende dichos centros y el nombre de la 
+misma. Por lo cual resulta que el conjunto de variables de entrada es implementado como una matriz bidimensional de antecedentes. 
+
+Para un conjunto de variables de entrada con un n\'{u}mero de n=2 variables y un n\'{u}mero m\'{a}ximo de  5 t\'{e}rminos, 
+resulta ser como se muestra en la figura \ref{matrizvar}.
+
+\begin{figure}[h]
+\begin{center}
+\epsfig{file=eps/matrizvar.eps,width=8cm}
+\end{center}
+\caption{Conjunto de variables del algoritmo implementado.}
+\label{matrizvar}
+\end{figure}
+
+Un ejemplo de una variable con un n\'{u}mero m=5 de t\'{e}rminos ser\'{i}a como se muestra en la figura \ref{variablex}.
+
+\begin{figure}[h]
+\begin{center}
+\epsfig{file=eps/variablex.eps,width=6cm}
+\end{center}
+\caption{Centroides de una variable del algoritmo implementado.}
+\label{variablex}
+\end{figure}
+
+En cada variable el primer centroide y el \'{u}ltimo corresponden al valor m\'{i}nimo y m\'{a}ximo  establecido respectivamente, 
+determinando as\'{i} el rango del universo de discurso de los t\'{e}rminos pertenecientes a cada variable. El n\'{u}mero m\'{i}nimo 
+de t\'{e}rminos en cada variable ha de ser igual a 3, mientras que el n\'{u}mero m\'{a}ximo de t\'{e}rminos viene dado mediante uno 
+de los par\'{a}metros de entrada del algoritmo evolutivo. Por tanto, el universo de cada variable se particiona en tantos t\'{e}rminos 
+como existan. Para ello, para cada variable se determina un n\'{u}mero aleatorio de t\'{e}rminos comprendido entre 3 y el m\'{a}ximo 
+n\'{u}mero especificado.
+
+Posteriormente el universo se particiona de la siguiente forma:
+\begin{itemize} 
+	\item En primer lugar se hacen tantas particiones como n\'{u}mero de t\'{e}rminos corresponda. 
+	\item El primer centroide corresponde con el valor m\'{i}nimo especificado para dicha variable. 
+	\item A continuaci\'{o}n se genera un valor entre el valor m\'{i}nimo y el valor del l\'{i}mite superior de la primera partici\'{o}n.  
+	\item Para el resto de centroides, se genera un aleatorio entre el valor del centroide anterior y el valor del l\'{i}mite superior de 
+		la partici\'{o}n en la que nos encontremos. 
+	\item El valor para el \'{u}ltimo centroide coincide con  el m\'{a}ximo valor para la variable. 
+\end{itemize}
+		
+Los valores se generan de esta forma para que exista uniformidad, pero a la vez se introduzca una peque\~na diversidad. 
+Se debe tener en cuenta que el n\'{u}mero de t\'{e}rminos entre variables no tiene porqu\'{e} ser el mismo, ya que el tama\~no 
+de los mismos se genera aleatoriamente entre el rango establecido. 
+
+Cada matriz 2-D, como muestra la  figura \ref{matrizvar}, que implementa el conjunto de variables de entrada de un SLD est\'{a} dividido en: 
+
+De $MV  [0, 0]$ a  $MV  [0, m]$ (Primera fila) almacena los centros de las particiones triangulares de las funciones de pertenencia de la 
+primera variable de entrada, por ejemplo $X$.
+
+La variable $X$ toma valores en el rango $[x_{min}, x_{min}]$, teni\'{e}ndose que cumplir lo siguiente en cualquier momento: 
+ 
+$x_{min}$ = $MV[0, 0] < MV[0, 1 ]< .. .< MV[0, m]$ = $x_{max}$    
+con $m\ge3$, siendo $m$ el n\'{u}mero de t\'{e}rminos.
+
+El resto de filas corresponden a cada una de las variables restantes cumpli\'{e}ndose en cada momento lo mencionado anteriormente. 
+De forma generalizada: 
+$x_{i min}$= $MV[i, 0] < MV[i, 1] < ... < MV[i, m]$ = $x_{i max}$ 
+
+$\forall i$, 1$\le$i$\le$n siendo $n$ el n\'{u}mero de variables y $m\ge3$ siendo el n\'{u}mero de t\'{e}rminos.
+El valor de m puede cambiar en cada variable puesto que es generado de forma aleatoria. 
+
+El conjunto de valores de la variable de salida es implementado mediante un vector de consecuentes. 
+Cada consecuente es un valor real representando un valor de salida para una combinaci\'{o}n de valores de entrada. 
+Esta estructura adem\'{a}s contiene el 
+rango que comprende dichos valores y el n\'{u}mero de consecuentes a generar.  
+Este n\'{u}mero viene dado por el producto del n\'{u}mero de t\'{e}rminos de cada una de las variables, puesto que cada consecuente 
+es una salida para cada una de las posibles combinaciones de los t\'{e}rminos que constituyen a cada variable.  
+Para una variable de salida con un n\'{u}mero de consecuentes igual a 12, resulta ser como se muestra en la figura \ref{consec}: 
+
+\begin{figure}[h]
+\begin{center}
+\epsfig{file=estylf2010.eps,width=8cm,height=2.5cm}
+\end{center}
+\caption{Estructura de consecuentes del algoritmo implementado.}
+\label{consec}
+\end{figure}
+
+Cada celda de este vector almacena un valor para $Z$, la variable de salida, donde:  
+$z_{min}\le MC[i] \le z_{max}$ $\forall i$, 1$\le$i$\le$n siendo $n$ el n\'{u}mero de consecuentes.
+
+Los valores del conjunto de consecuentes son generados aleatoriamente entre un valor m\'{i}nimo  y un m\'{a}ximo 
+dados sin conservar ning\'{u}n tipo de orden entre los mismos.  
+
+En este ejemplo tenemos dos variables de entrada, suponemos que son$x$ e $y$, y que la variable de salida es $z$. 
+Para este caso, la f\'{o}rmula para acceder a la posici\'{o}n del consecuente que corresponde a una combinaci\'{o}n de valores 
+de entrada conociendo la posici\'{o}n de los mismos dentro del conjunto de variables de entrada ser\'{i}a: 
+
+\begin{eqnarray}
+vz = vx \cdot ny + vy
+\end{eqnarray} 
+
+donde $vx$ y $vy$ ser\'{i}an las posiciones de los t\'{e}rminos correspondientes a los valores de cada una de las variables de 
+entrada una vez aplicado el motor de inferencia, el cual ser\'{a} detallado m\'{a}s adelante, y ny el n\'{u}mero de t\'{e}rminos que 
+tiene la segunda variable. El resultado obtenido ser\'{i}a la posici\'{o}n del consecuente correspondiente a dichos valores de entrada.  
+En general, para obtener la posici\'{o}n del consecuente correspondiente a una combinaci\'{o}n de valores de entrada teniendo $n$ 
+variables, ser\'{i}a la suma de los productos de la posici\'{o}n del t\'{e}rmino correspondiente a cada variable por el producto del n\'{u}mero 
+de t\'{e}rminos que tienen cada una de las variables siguientes, menos en el caso de la \'{u}ltima variable que se multiplica por 1 al no haber variables sucesivas. 
+
+\begin{eqnarray}
+F(v_0,...,v_n) = \sum(v_{i}{\prod_{j=i+1}}n_{j})
+\end{eqnarray} 
+
+El Sistema de L\'{o}gica Difusa trabaja usando reglas de la siguiente forma: 
+
+SI $X$ es $MV[0,i]$ y $Y$ es $MV[1,j]$  ENTONCES $Z$ es $MC[k]$
+
+Siendo $i$ la posici\'{o}n del t\'{e}rmino correspondiente a la variable $X$, $j$ la posici\'{o}n correspondiente a la variable $Y$, y 
+$k$ la posici\'{o}n del consecuente correspondiente resultante de ${F(i,j)}$. 
+
+Los valores $x_{max}$, $x_{min}$, $y_{max}$, $y_{min}$, $z_{max}$, $z_{min}$, son par\'{a}metros que son proporcionados al algoritmo. 
+
+\subsection{GENERACI\'{O}N DE LA POBLACI\'{O}N INICIAL }
+
+Para la creaci\'{o}n de la poblaci\'{o}n de soluciones inicial,  en cualquier caso,  se har\'{a} de forma aleatoria tanto para el conjunto 
+de variables de entrada como el conjunto de valores de la variable de salida, as\'{i} como el n\'{u}mero de t\'{e}rminos para cada variable 
+de entrada seg\'{u}n un m\'{a}ximo dado.  
+
+\subsection{OPERADORES GEN\'{E}TICOS}
+
+\subsubsection{Recombinaci\'{o}n}
+
+Este operador une valores de un SLD a otro. Teniendo en cuenta que estos dos SLD no necesariamente tienen la mismas dimensiones, 
+la recombinaci\'{o}n no puede ser realizada de manera trivial.
+
+El operador trabaja de la siguiente manera:
+
+\begin{enumerate}
+
+	\item Aleatoriamente se elige un SLD para ser modificado (ser\'{a} llamado $M_r$, o SLD destinatario), y otro que proporcionar\'{a} los genes 
+		para ser recombinados ( $M_d$, o SLD donante). Solo la primera $M_r$ ser\'{a} modificada. 
+	\item Se elige un bloque aleatorio de celdas de la estructura de consecuentes correspondiente a $M_r$. Para especificar este bloque s\'{o}lo 
+		se seleccionar\'{a}n dos celdas aleatoriamente correspondientes a los dos extremos o esquinas del bloque que son capaces de determinar 
+		el bloque entero. Para seleccionar aleatoriamente estas dos celdas, se crear\'{a}n dos vectores con las posiciones correspondientes a un 
+		t\'{e}rmino de cada variable, las cuales ser\'{a}n seleccionadas de manera aleatoria. 
+		Posteriormente se codificaran dichos vectores para obtener las posiciones correspondientes en el conjunto de consecuentes. Ll\'{a}mense 
+		estas dos celdas $M_r[r_1]$ y $M_r[r_2]$. Imaginando espacialmente la estructura multidimensional que constituyen los consecuentes, las celdas 
+		a modificar con valores procedentes de $M_d$, ser\'{a}n las incluidas en el bloque espacial que forman las dos celdas seleccionadas aleatoriamente, 
+		como extremos de bloque, es decir, aquellas celdas del consecuente cuya posici\'{o}n al ser decodificada (aplic\'{a}ndole una funci\'{o}n de 
+		decodificaci\'{o}n para conocer la combinaci\'{o}n de posiciones de t\'{e}rminos pertenecientes a las variables) contiene las posiciones de los 
+		t\'{e}rminos de cada variable dentro del rango establecido por las posiciones elegidas aleatoriamente como esquinas del bloque. 
+	\item Para cada celda $M_r[r_i]$, decodificada tal que as\'{i}, para saber la posici\'{o}n del t\'{e}rmino correspondiente en cada variable a la que 
+		se refiere la celda en cuesti\'{o}n,  $M_r[r_{1i}, r_{2j},...r_{nm}]$ , (donde $r_{1i}$ va de $r_{11}$ a $r_{12}$, $r_{2j}$ va de $r_{21}$ a $r_{22}$ ...y... $r_{nm}$
+		va de $r_{n1}$ a $r_{n2}$) el operador hace lo siguiente: 
+	\item Del conjunto de variables de entrada perteneciente al SLD donante, $M_d$, de cada variable se selecciona el t\'{e}rmino cuyo 
+		valor se acerca m\'{a}s al t\'{e}rmino de la misma variable correspondiente al SLD receptor $M_{r}$. 
+	\item Finalmente, se modifica el valor almacenado en $M_r[r_i]$, por el almacenado en la celda perteneciente a $M_d$ que resulta tras codificar 
+		las posiciones de los t\'{e}rminos de cada variable obtenidos en el punto anterior. 
+
+\end{enumerate}
+
+\subsubsection{Adici\'{o}n de funciones de pertenencia (Mutador de incremento de tama\~no)}
+
+Este operador modifica la estructura de un SLD añadiendo una funci\'{o}n de pertenencia a las variables de entrada.
+El operador trabaja de la siguiente manera:
+
+\begin{enumerate}
+	\item Aleatoriamente se elige un SLD para ser modificado. 
+	\item Se selecciona aleatoriamente la variable dentro del conjunto de variables de entrada que va a ser modificada. 
+	\item Se elige aleatoriamente la posici\'{o}n del nuevo t\'{e}rmino dentro de la variable seleccionada. Esta posici\'{o}n ha de ser distinta 
+		de la primera y la \'{u}ltima y obviamente encontrarse dentro de dicho rango. 
+	\item Se obtiene un valor aleatorio para el nuevo t\'{e}rmino entre el valor del t\'{e}rmino situado justo en la posici\'{o}n anterior y la 
+		posici\'{o}n posterior. 
+	\item El siguiente paso es calcular dentro del conjunto de consecuentes las posiciones que van a ser modificadas, tras la inserci\'{o}n 
+		de un nuevo t\'{e}rmino o funci\'{o}n de pertenencia dentro de una de las variables del conjunto de variables de entrada. Para ello, 
+		se calculan las posiciones dentro de los consecuentes que al ser decodificadas contienen la posici\'{o}n del nuevo t\'{e}rmino. 
+		Tras esto, habr\'{a} que calcular el desplazamiento que sufre cada una de ellas al insertarse una nueva. Para evitar problemas de 
+		incosistencia en las posiciones calculadas a la hora de insertar consecuentes, esto se har\'{a} de forma creciente. 
+	\item Una vez calculadas dichas posiciones se inserta el nuevo t\'{e}rmino en la variable seleccionada dentro del conjunto de variables de 
+		entrada con el valor aleatorio obtenido. 
+	\item Por \'{u}ltimo, dentro del conjunto de consecuentes se insertar\'{a}n nuevos valores en las posiciones calculadas en el paso 5. 
+		Estos, ser\'{a}n valores aleatorios generados por una funci\'{o}n Gaussiana centrada en el punto medio entre el valor del consecuente 
+		situado encima del actual espacialmente, es decir, el correspondiente a aquel cuya posici\'{o}n decodificada contiene la misma pero con 
+		la posici\'{o}n del t\'{e}rmino nuevo decrementado en una unidad, de la variable que ha sido modificada nuevos valores, y aquel situado 
+		por debajo espacialmente, an\'{a}logamente, con la posici\'{o}n del t\'{e}rmino modificado incrementado en una unidad.  
+\end{enumerate}
+		
+La manera en que este operador trabaja asegura que el SLD resultante es siempre v\'{a}lido, porque los valores del nuevo centroide y de los nuevos 
+consecuentes son establecidos de forma que los resultados siguen un determinado orden o se encuentran dentro de un rango v\'{a}lido (por ejemplo, 
+el valor para el nuevo centroide es mayor que el precedente y menor que el siguiente).  
+
+El algoritmo para el operador de adici\'{o}n de un nuevo t\'{e}rmino, centroide o funci\'{o}n de pertenencia opera de la misma forma para cualquier variable. 
+
+\subsubsection{Eliminaci\'{o}n de funciones de pertenencia (Mutador de decremento de tama\~no)}
+
+Este operador modifica la estructura de un SLD decrementando el n\'{u}mero de funciones de pertenencia en las variables de entrada.
+El operador trabaja como sigue:
+
+\begin{enumerate}
+
+	\item Aleatoriamente se elige un SLD para ser modificado. 
+	\item Se selecciona aleatoriamente la variable dentro del conjunto de variables de entrada que va a ser modificada. 
+	\item Se elige aleatoriamente la posici\'{o}n del t\'{e}rmino a eliminar dentro de la variable seleccionada. 
+		Esta posici\'{o}n ha de ser distinta de la primera y la \'{u}ltima y obviamente encontrarse dentro de dicho rango. 
+		En el caso de que el n\'{u}mero de t\'{e}rminos sea el m\'{i}nimo permitido, es decir, que tenga un n\'{u}mero de t\'{e}rminos 
+		menor o igual a 3, no se eliminar\'{a} ninguno. 
+	\item El siguiente paso es calcular dentro del conjunto de consecuentes, las posiciones que van a ser modificadas tras la eliminaci\'{o}n 
+		del t\'{e}rmino o funci\'{o}n de pertenencia dentro de una de las variables del conjunto de variables de entrada. Para ello, 
+		se calculan las posiciones dentro de los consecuentes que al ser decodificadas contienen en la variable seleccionada, 
+		la posici\'{o}n del t\'{e}rmino a eliminar.  
+	\item Una vez calculadas dichas posiciones, tendr\'{a} lugar el borrado de los consecuentes situados en las mismas. 
+		Para evitar problemas de inconsistencia en las posiciones en cuanto a eliminar consecuentes, esta tarea ser\'{a} realizada
+		en orden decreciente, es decir, empezando por detr\'{a}s. 
+	\item Por \'{u}ltimo, se elimina el t\'{e}rmino elegido en la variable seleccionada dentro del conjunto de variables de entrada. 
+		
+\end{enumerate}
+
+Al igual que el operador anterior, este operador trabaja de forma que asegura que el SLD resultante es siempre v\'{a}lido, puesto que no puede 
+eliminar t\'{e}rminos de una variable de un SLD cuyo n\'{u}mero de t\'{e}rminos es el m\'{i}nimo permitido, adem\'{a}s de no poder elegir tanto el 
+primero como el \'{u}ltimo para ser eliminados y obviamente, tras eliminar un t\'{e}rmino el SLD permanece ordenado.  
+
+El algoritmo para el operador de eliminaci\'{o}n de un t\'{e}rmino, centroide o funci\'{o}n de pertenencia opera de la misma forma para cualquier variable. 
+
+\subsubsection{Modificaci\'{o}n de un valor centroide (Mutador de precedentes)}
+
+Este operador modifica el valor almacenado en un t\'{e}rmino de una de las variables del conjunto de variables de entrada.
+
+El operador trabaja as\'{i}: 
+
+\begin{enumerate}
+
+	\item Aleatoriamente se elige un SLD para ser modificado 
+	\item Se selecciona aleatoriamente la variable dentro del conjunto de variables de entrada que va a ser modificada. 
+	\item Se elige aleatoriamente la posici\'{o}n del t\'{e}rmino dentro de la variable seleccionada al cual va a modificarse su valor. 
+		Esta posici\'{o}n ha de ser distinta de la primera y la \'{u}ltima y obviamente encontrarse dentro de dicho rango. 
+	\item Se obtiene un nuevo valor calculado de forma aleatoria para el t\'{e}rmino seleccionado entre el valor del t\'{e}rmino anterior y posterior. 
+	\item Por \'{u}ltimo modificamos el valor del t\'{e}rmino con el nuevo valor calculado.
+
+\end {enumerate}
+Tal y como los operadores anteriores, este operador tambi\'{e}n trabaja de forma que asegura que el SLD resultante es siempre v\'{a}lido, ya que no se pueden modificar tanto el primer como el \'{u}ltimo t\'{e}rmino y obviamente, tras modificar el t\'{e}rmino, el SLD permanece ordenado, puesto que siempre se c\'{a}lcula entre el valor precedente que es menor y el siguiente que es mayor. 
+El algoritmo para el operador de eliminaci\'{o}n de un t\'{e}rmino, centroide o funci\'{o}n de pertenencia opera de la misma forma para cualquier variable. 
+
+\subsubsection{Modificaci\'{o}n de un valor consecuente (Mutador de consecuentes)}
+
+Este operador modifica el valor almacenado en un consecuente del conjunto de consecuentes de un determinado SLD. 
+
+El operador trabaja de la siguiente manera: 
+\begin{enumerate}
+
+	\item Aleatoriamente se elige un SLD para ser modificado. 
+	\item Se selecciona aleatoriamente la posici\'{o}n del consecuente cuyo valor va a ser modificado. 
+	\item Se obtiene un nuevo valor calculado de forma aleatoria determinado por una funci\'{o}n Gaussiana centrada en el valor existente 
+		para el consecuente seleccionado, y variando entre el valor m\'{i}nimo zmin y el valor m\'{a}ximo zmax de los consecuentes. 
+	\item Por \'{u}ltimo modificamos el valor del consecuente con el nuevo valor calculado. 
+
+\end {enumerate}
+Tal y como los operadores anteriores, este operador tambi\'{e}n trabaja de forma que asegura que el SLD resultante es siempre v\'{a}lido, ya que 
+se generan los valores dentro de un rango determinado.  
+El algoritmo para el operador de eliminaci\'{o}n de un t\'{e}rmino, centroide o funci\'{o}n de pertenencia opera de la misma forma para cualquier variable. 
+
+\subsection{Funci\'{o}n fitness}
+
+La funci\'{o}n fitness u objetivo es una funci\'{o}n de evaluaci\'{o}n de la medida de calidad de un cromosoma. Para este problema ser\'{a} 
+un valor real que se obtendr\'{a} mediante el uso directo de la funci\'{o}n a maximizar. 
+El c\'{a}lculo del fitness de cada individuo se realiza en base a un conjunto (llamado conjunto de entrenamiento) de pares de entrada-salida  
+de una funci\'{o}n conocida. 
+El fitness asignado al SLD es la inversa de la distancia del Error Cuadr\'{a}tico Medio Normalizado (Normalized MSE) de las salidas correctas 
+conocidas a las salidas producidas por el SLD, calculadas usando el conjunto de entrenamiento. 
+
+\begin{eqnarray}
+F_{j}= \frac{N}{\sum_{i=1}^N((z_{i} - z_{ij})/(z_{max} - z_{min}))^2)}
+\end{eqnarray} 
+
+D\'{o}nde $F_j$ es el fitness para el individuo n\'{u}mero $j$, $N$ es el n\'{u}mero de ejemplos el conjunto de entrenamiento (training set),  $z_i$  es la 
+salida correcta, y $z_{ij}$ es la salida proporcionada por el SLD.
+Un caso especial es cuando $z_i$ = $z_{ij}$, $\forall i$  1 $\le$ i $\le$ m, porque $F_j$  ser\'{i}a igual a $N$/0; en este caso, $F_j$  es asignado con 
+un valor muy alto.
+Se debe tener en cuenta que el tama\~no del SLD no interviene en la computaci\'{o}n o c\'{a}lculo del fitness. 
+
+\subsection{PROCESO EVOLUTIVO}
+
+El algoritmo evolutivo usado consiste en la selecci\'{o}n elitista, tama\~no de poblaci\'{o}n fijado y los operadores descritos. He aqu\'{i} los principales pasos: 
+
+\begin{enumerate}
+
+	\item Crear la primera poblaci\'{o}n, compuesta de p individuos generados aleatoriamente de tama\~no aleatorio
+	 	(con un l\'{i}mite m\'{a}ximo del n\'{u}mero de t\'{e}rminos dado por el problema como par\'{a}metro de entrada, 
+	 	solo para esta primera generaci\'{o}n). Se establece el contador de generaciones a 1. p es tambi\'{e}n un par\'{a}metro 
+		de entrada del problema (tama\~no de la poblaci\'{o}n).
+	\item Computar el valor del fitness para cada individuo.
+	\item Ordenar los individuos desde el valor de fitness m\'{a}s alto al m\'{a}s bajo.
+	\item Seleccionar los q  mejores individuos (subconjunto \'{e}lite de la poblaci\'{o}n). Estos formar\'{a}n parte del subconjunto 
+		\'{e}lite de la poblaci\'{o}n, a la cual van a aplicarse los operadores. q viene dado indirectamente como par\'{a}metro de 
+		entrada del problema, ya que es proporcionado un par\'{a}metro ``non elite rate" , que indica el porcentaje de la poblaci\'{o}n 
+		total que ha de ser sustituido por nuevos individuos. Por tanto q es igual (1 - non elite rate) por el tama\~no de la poblaci\'{o}n. 
+	\item Generar p - q nuevos SLDs, para despu\'{e}s incrementar la poblaci\'{o}n a p. Cada nuevo individuo es creado mediante el 
+		duplicado de un individuo del subconjunto \'{e}lite de la poblaci\'{o}n, y despu\'{e}s de eso, aplicando uno de los operadores 
+		gen\'{e}ticos a la copia. La probabilidad de uno de los individuos del subconjunto \'{e}lite de ser seleccionado para la reproducci\'{o}n, 
+		es relativo a su valor fitness. El m\'{e}todo de selecci\'{o}n empleado es la selecci\'{o}n por ruleta.
+	\item Evaluar los nuevos individuos.
+	\item Reemplazar los q peores individuos (es decir, los q individuos cuyo fitness es menor al resto) de la poblaci\'{o}n por los individuos 
+		de la subpoblaci\'{o}n resultantes de haber elegido los q mejores individuo de la poblaci\'{o}n y posteriormente aplicarles un operador gen\'{e}tico.
+	\item Ordenar la poblaci\'{o}n tras el reemplazamiento de dicha subpoblaci\'{o}n.
+	\item	Incrementar el contador de generaciones, e ir al paso 3, a menos que se haya alcanzado el n\'{u}mero de generaciones especificado.
+	\item Finalmente, el mejor SLD encontrado es el primer individuo de la actual ( o \'{u}ltima) poblaci\'{o}n ya que los individuos est\'{a}n ordenados 
+		desde el m\'{a}s alto al m\'{a}s bajo fitness.
+
+\end{enumerate} 
+
+Este algoritmo se ejecuta con los siguientes par\'{a}metros: 
+
+\begin{itemize} 
+	\item Tamaño de la pobiaci\'{o}n.
+	\item Proporci\'{o}n de individuos que son eliminados en cada nueva generaci\'{o}n (non-elite-rate).
+	\item Probabilidad de cada operador.
+	\item M\'{a}ximo n\'{u}mero de t\'{e}rminos para la primera generaci\'{o}n.
+	\item M\'{a}ximo n\'{u}mero de generaciones.
+	\item Numbero de variables.
+\end{itemize} 
+
+Cada operador tiene asociado una probabilidad de aplicaci\'{o}n que no cambia durante la aplicaci\'{o}n del algoritmo. Adem\'{a}s, cada nuevo individuo es creado mediante la aplicaci\'{o}n de uno, operador de copia o duplicaci\'{o}n de sus padres, operador de recombinaci\'{o}n o cualquiera de los mutadores.
+Usualmente, el operador de recombinaci\'{o}n es aplicado con mayor probabilidad para permitir la mezcla de bloques construidos, mientras que los mutadores son aplicados con peque\~nas probabilidades para escapar de b\'{u}squedas aleatorias. 
+De otro lado, todos los operadores de mutaci\'{o}n comparten el mismo radio o probabilidad para balancear el incremento o decremento del tama\~no de los SLDs. Se utilizar\'{a} como criterio de parada el alcance de un n\'{u}mero m\'{a}ximo de generaciones realizadas. Es decir, el programa finalizar\'{a} cuando el n\'{u}mero de veces que se ejecuta el algoritmo completo supera un n n\'{u}mero de veces dado por el problema como par\'{a}metro de entrada. El algoritmo completo se ejecutar\'{a} 1 vez para cada instancia del problema. 
+
+\section{EXPERIMENTOS Y RESULTADOS}
+
+En esta sección se tiene como objetivo comprobar el funcionamiento del algoritmo desarrollado, así como validar el comportamiento de los 
+operadores creados. Para lo cual, se han configurado y ejecutado una serie de experimentos tanto con el EvFuzzySystem así como 
+otros métodos y algoritmos de regresión ya existentes.
+
+La experimentación y análisis de resultados que han sido realizados está dividido en: 
+\begin{itemize}
+	\item Experimentación con el algoritmo evolutivo desarrollado según las funciones del artículo ?Evolving two-dimensional fuzzy system?. 
+	\item Experimentación con el algoritmo evolutivo desarrollado y con algoritmos contenidos dentro de la herramienta KEEL. 
+\end{itemize}
+
+\subsection {Descripción de las fuentes de datos utilizadas}
+
+Para realizar el proceso de toma de resultados y de análisis del algoritmo evolutivo 
+implementado, se han utilizado a partir de diferentes bases de datos provenientes de fuentes 
+distintas, que podrían catalogarse en dos categorías distintas: funciones propuestas del 
+artículo inicial y fuentes de datos provenientes de la herramienta KEEL. 
+
+\subsection {Fuentes de datos del artículo ``Evolving two-dimensional fuzzy systems''} 
+
+En primer lugar, tenemos las bases de datos referentes al artículo que extiende el algoritmo, las cuales provienen de una serie de funciones de dos variables. Las funciones empleadas han sido: 
+
+\begin{eqnarray}
+	F(x,y) = sin (xy)
+\end{eqnarray} 
+
+\begin{eqnarray}
+	F(x,y) = e^{xsin (xy)}
+\end{eqnarray} 
+
+\begin{eqnarray}
+	F(x,y) = \frac{40e^{8(x-0.5)^2+(y-0.5)^2}}{e^{8((x-2)^2+(y-0.7)^2)}+e^{((x-0.7)^2+(y-0.2)^2)}}
+\end{eqnarray} 
+
+\begin{eqnarray}
+	F(x,y) = sin (2\pi \sqrt{x^2+y^2})
+\end{eqnarray} 
+
+\subsection {Fuentes de datos de la herramienta KEEL}
+En segundo lugar, se han utilizado 4 conjuntos de datos obtenidas de la tarea de 
+regresión de la herramienta KEEL, con tal de poder realizar una comparativa con el resto de 
+los algoritmos de regresión integrados. Dichos datos se encuentran disponibles en la sección 
+KEEL-dataset dentro del sitio www.keel.es. Los conjuntos de datos con los cuales se han 
+desarrollado los experimentos son las siguientes:
+
+\begin{itemize}
+ 	\item Daily-electric-energy average cost in Spain in 2003
+	\item Electrical-Length 
+	\item Friedman Benchmark problem
+	\item MachineCPU 
+ \end{itemize}
+ 
+\subsection {Experimentación y resultados para el artículo ``Evolving two-dimensional fuzzy systems``''}
+
+Para llevar acabo los experimentos relacionados con el artículo, se han creado 
+ejemplos con 3 valores: 2 datos de entrada (X, Y) y una salida (Z). Por tanto, se ha generado 
+un fichero por función con 400 ejemplos, donde los datos de entrada X e Y tienen valores 
+igualmente espaciados, en un rango dado para cada una, el cual en este caso, es el mismo para 
+ambas. Es decir, se han generado 400 puntos tomando 20 valores distribuidos uniformemente 
+para X en un rango dado, y análogamente para la Y, haciendo todas las posibles 
+combinaciones entre ambas entradas. Los valores que toma la salida  Z, son los resultantes 
+tras aplicar la fórmula en cada caso.  
+
+Para crear los conjuntos de entrenamiento y test de los experimentos, se han generado 
+5 particiones distintas para cada función, sin usar ningún tipo de particionador específico. 
+Para cada partición, fueron elegidos aleatoriamente 320 puntos para ser usados como conjunto 
+de entrenamiento (80\% del total de puntos), mientras que los 80 restantes fueron como 
+conjunto de test (20\% del total de puntos) para examinar las aptitudes del mejor  SLD 
+obtenido. 
+Por tanto, para conseguir valores medios y desviaciones típicas, el algoritmo fue 
+ejecutado 5 veces, cada vez con una partición diferente de las generadas y con diferentes 
+semillas aleatorias procedentes de la función getTime() dentro de la clase Date de Java, la 
+cual devuelve el número de milisegundos desde el 1 de Enero de 1970, a las  00:00:00 GMT. 
+Según el momento en el que se ejecute el algoritmo, esta función devolverá valores diferentes. 
+
+Los parámetros utilizados en el algoritmo evolutivo implementado son los mismos que 
+se emplean en el algoritmo propuesto en el artículo.
+
+ Los valores utilizados en los parámetros durante las distintas ejecuciones del algoritmo son: 500 para el tamaño de la población, 300 para el número de generaciones, 40 máximo número de términos, 0.1 probabilidad de recombinación, 0.001 probabilidad del mutador de simensión, 0.01 probabilidad del mutador de precedentes, 0.01 probabilidad del mutador de consecuentes y 0.35 como porcentaje de individuos que no van a pertenecer a la población élite. Cada experimento consta 
+de 5 ejecuciones para cada función sumando un total de 4 experimentos de 5 ejecuciones cada 
+uno suponiendo por tanto 20 ejecuciones realizadas.
+
+A continuación se muestran gráficamente las salidas de cada función original así como 
+la mejor solución obtenida durante las cinco ejecuciones del algoritmo en cada problema. 
+
+//METER grafica 1
+
+//METER grafica 2
+
+//METER grafica 3
+
+//METER grafica 4
+
+
+\begin{table}[ht]
+\begin{center}
+\caption{ Resultados del algoritmo implementado para cada función del artículo.}
+\label{resultArt}
+\begin{tabular}{cccc} \hline
+{\bf  ID}&{\bf FITNESS}&{\bf ECMN}&{\bf TAMA\~NO}\\ \hline\hline
+1 & 39.18 (±6.17) & 0.02984 (±0.0049) & 95.4 (±82.97) \\ 
+2 & 124.72 (±37.72) & 0.01383 (±0.00488) & 99.4 (±39.17) \\ 
+3 & 209.3 (±165.23) & 0.00875 (±0.00348) & 99.8 (±71.32) \\ 
+4 & 32.75 (±7.27) & 0.05635 (±0.01523) & 159.2 (±95.64) \\ \hline
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+ 
+ 
+ 
+\begin{table}[ht]
+\begin{center}
+\caption{ Resultados del algoritmo propuesto en el artículo.}
+\label{resultArt}
+
+\begin{tabular}{cccc} \hline
+{\bf  ID}&{\bf FITNESS}&{\bf ECMN}&{\bf TAMA\~NO}\\ \hline\hline
+1 & 54 (±8) & 0.0288 (±0.0007) & 34 (±3) \\ 
+2 & 197 (±35) & 0.006 (±0.003) & 41 (±40) \\ 
+3 & 114 (±8) & 0.0122 (±0.0011) & 18.6 (±1.2) \\ 
+4 & 34 (±12) & 0.046 (±0.012) & 117 (±36) \\ \hline
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+ 
+
+\section{CONCLUSIONES}
+
+Los experimentos incluidos,  han sido realizados para validar el comportamiento de los operadores creados. Los relativos a las funciones 
+del art\'{i}culo ``Evolving two-dimensional fuzzy system'' demuestran que siguiendo las mismas caracter\'{i}sticas del algoritmo propuesto en el 
+art\'{i}culo, se obtienen resultados con diferencias no muy significativas en cuanto al Error de Generalizaci\'{o}n, s\'{o}lo consiguiendo peores valores 
+en cuanto al tamaño. Por tanto para funciones de dos variables de entrada el EvFuzzySystem presenta un comportamiento adecuado.  
+
+Los experimentos realizados con KEEL se han diseñado mayormente para comprobar el funcionamiento de EvFuzzySystem con m\'{a}s 
+de dos variables de entrada. Como hemos podido ver, los resultados obtenidos no son los m\'{a}s \'{o}ptimos pero sin embargo, no son los peores. 
+Adem\'{a}s presenta un comportamiento similar para cada uno de los problemas con los que hemos trabajado, mientras que otros algoritmos 
+son muy buenos para algunos problemas y muy p\'{e}simos para otros. El hecho de no obtener resultados m\'{a}s \'{o}ptimos, puede ser consecuencia 
+de varios motivos, entre ellos, el valor de los par\'{a}metros que igual no son los m\'{a}s adecuados, ya que no conocemos la posible equivalencia 
+existente con respecto a los par\'{a}metros del resto de algoritmos. No obstante, se ha verificado que el algoritmo funciona para m\'{a}s de 2 variables 
+de entrada el cual era el principal objetivo a cumplir en este trabajo.
+
+
+
+
+
+
+\section{TRABAJOS FUTUROS}
+
+Como mejoras y futuras tareas que se puedan aplicar al algoritmo desarrollado, cabe destacar: 
+
+\begin{itemize}
+	\item Uso de alg\'{u}n tipo de b\'{u}squeda local en orden de afinar las soluciones encontradas por el algoritmo gen\'{e}tico, consiguiendo valores m\'{a}s 
+		precisos para los consecuentes. De este modo, un algoritmo gen\'{e}tico realiza una b\'{u}squeda global, mientras que el operador local de b\'{u}squeda, 
+		trata de mejorar el individuo en alg\'{u}n pequeño vecindario.  
+	\item Encontrar alguna otra forma de computar el fitness para  reducir considerablemente el tiempo necesario para la ejecuci\'{o}n del algoritmo. 
+	\item Realizar variaciones en los actuales operadores, como por ejemplo, en la recombinaci\'{o}n, permitir tambi\'{e}n el intercambio de t\'{e}rminos dentro 
+		de las variables. En la selecci\'{o}n, se podr\'{i}a optar por usar otro tipo de m\'{e}todos, como por ejemplo selecci\'{o}n por torneo. 
+	\item Una vez que el proceso evolutivo ha terminado, se podr\'{i}a llevar a cabo una etapa de post-procesamiento para eliminar reglas que no sean 
+		significativas para el problema en concreto del cual se est\'{e} tratando. 
+	\item Aplicar otro tipo de algoritmos gen\'{e}ticos en vez de uno b\'{a}sico, como por ejemplo uno del tipo CHC.
+	\item Aplicar algoritmos gen\'{e}ticos multiobjetivo, puesto que tanto el algoritmo CHC como el AG tienen grandes limitaciones cuando los problemas 
+		a los que nos enfrentamos tienen m\'{a}s de una variable de decisi\'{o}n. 
+\end{itemize}
+
+
+\subsection{TABLAS}
+
+Todas las tablas deber\'{a}n estar referenciadas en el texto, como se ha hecho con la tabla~\ref{table1}, centradas y claras. El
+n\'{u}mero y t\'{i}tulo siempre aparecer\'{a}n en la parte superior de la tabla. Las tablas deben ser numeradas de manera correlativa.
+
+\begin{table}[ht]
+\begin{center}
+
+\caption{Ejemplo de t\'{i}tulo de una tabla.}
+\label{table1}
+\begin{tabular}{|c|l|} \hline
+{\bf NOMBRE} & {\bf DESCRIPCI\'ON} \\ \hline
+$A$ & Subconjunto difuso de $X$ \\ \hline
+$\mu_{A}$ & Funci\'on de pertenencia de $A$ \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{agrad}
+La palabra agradecimientos debe ir alineada a la izquierda, no numerada y en negrita. Todos los agradecimientos deben figurar al
+final del trabajo.
+\end{agrad}
+
+\begin{thebibliography}{99}
+
+\bibitem{evfuzzy}V.M. Rivas, J.J. Merelo, I. Rojas, G. Romero, P.A. Castillo, J. Carpio.  Evolving two-dimensional fuzzy systems.  {\em Fuzzy Sets and Systems} 138 P\'{a}g. 381-398, 2003.
+
+\end{thebibliography}
+
+\end{document}
